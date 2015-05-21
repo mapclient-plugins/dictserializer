@@ -1,14 +1,13 @@
 from setuptools import setup, find_packages
-import sys, os
 
-dependencies = ['''Insert plugin dependencies here''']
+dependencies = []
 
 setup(name=u'mapclientplugins.dictserializerstep',
       version='0.0',
       description='',
       long_description="",
       classifiers=[],
-      author=u'Hugh SOrby',
+      author=u'Hugh Sorby',
       author_email='',
       url='',
       license='GPL',
@@ -16,7 +15,5 @@ setup(name=u'mapclientplugins.dictserializerstep',
       namespace_packages=['mapclientplugins'],
       include_package_data=True,
       zip_safe=False,
-      install_requires=[
-          # -*- Extra requirements: -*-
-      ],
+      install_requires=dependencies,
       )

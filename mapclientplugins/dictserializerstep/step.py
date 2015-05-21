@@ -12,6 +12,7 @@ from PySide import QtGui
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.dictserializerstep.configuredialog import ConfigureDialog
 
+DICT_OUTPUT_FILENAME = 'dict.json'
 
 class DictSerializerStep(WorkflowStepMountPoint):
     '''
@@ -30,6 +31,7 @@ class DictSerializerStep(WorkflowStepMountPoint):
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#dict'))
         self._config = {}
         self._config['identifier'] = ''
+        self._data_in = None
 
 
     def execute(self):
@@ -39,6 +41,15 @@ class DictSerializerStep(WorkflowStepMountPoint):
         may be connected up to a button in a widget for example.
         '''
         # Put your execute step code here before calling the '_doneExecution' method.
+        json_string = json.dumps(self._data_in, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        output_dir = os.path.join(self._location, self._config['identifier'])
+        filename = os.path.join(output_dir, DICT_OUTPUT_FILENAME)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+        with open(filename, 'w') as f:
+            f.write(json_string)
+
         self._doneExecution()
 
     def setPortData(self, index, dataIn):
@@ -47,7 +58,7 @@ class DictSerializerStep(WorkflowStepMountPoint):
         The index is the index of the port in the port list.  If there is only one
         uses port for this step then the index can be ignored.
         '''
-        portData0 = dataIn # http://physiomeproject.org/workflow/1.0/rdf-schema#dict
+        self._data_in = dataIn # http://physiomeproject.org/workflow/1.0/rdf-schema#dict
 
     def configure(self):
         '''
@@ -57,7 +68,7 @@ class DictSerializerStep(WorkflowStepMountPoint):
         then set:
             self._configured = True
         '''
-        dlg = ConfigureDialog()
+        dlg = ConfigureDialog(QtGui.QApplication.activeWindow().currentWidget())
         dlg.identifierOccursCount = self._identifierOccursCount
         dlg.setConfig(self._config)
         dlg.validate()
