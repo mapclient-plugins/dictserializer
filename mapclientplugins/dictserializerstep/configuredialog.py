@@ -2,6 +2,7 @@
 
 from PySide import QtGui
 from mapclientplugins.dictserializerstep.ui_configuredialog import Ui_ConfigureDialog
+import os.path
 
 INVALID_STYLE_SHEET = 'background-color: rgba(239, 0, 0, 50)'
 DEFAULT_STYLE_SHEET = ''
@@ -27,12 +28,22 @@ class ConfigureDialog(QtGui.QDialog):
         # Set a place holder for a callable that will get set from the step.
         # We will use this method to decide whether the identifier is unique.
         self.identifierOccursCount = None
+        self._previousLocation = ''
 
         self._makeConnections()
 
     def _makeConnections(self):
-        self._ui.lineEdit0.textChanged.connect(self.validate)
+        self._ui.lineEditIdentifier.textChanged.connect(self.validate)
+        self._ui.lineEditOutputLocation.textChanged.connect(self.validate)
+        self._ui.checkBoxDefaultLocation.clicked.connect(self.validate)
+        self._ui.pushButtonOutputLocation.clicked.connect(self._outputLocationButtonClicked)
 
+    def _outputLocationButtonClicked(self):
+        location, _ = QtGui.QFileDialog.getSaveFileName(self, caption='Choose Output File', dir=self._previousLocation)
+        if location:
+            self._previousLocation = os.path.dirname(location)
+            self._ui.lineEditOutputLocation.setText(location)
+    
     def accept(self):
         '''
         Override the accept method so that we can confirm saving an
@@ -55,14 +66,32 @@ class ConfigureDialog(QtGui.QDialog):
         '''
         # Determine if the current identifier is unique throughout the workflow
         # The identifierOccursCount method is part of the interface to the workflow framework.
-        value = self.identifierOccursCount(self._ui.lineEdit0.text())
-        valid = (value == 0) or (value == 1 and self._previousIdentifier == self._ui.lineEdit0.text())
+        
+        sender = self.sender()
+        output_directory_valid = False
+        output_location_valid = False
+        output_location = self._ui.lineEditOutputLocation.text()
+        
+        output_directory = os.path.dirname(output_location)
+        output_file = os.path.basename(output_location)
+        if os.path.isdir(output_directory):
+            output_directory_valid = True
+            
+        if sender == self._ui.lineEditOutputLocation and output_directory_valid:
+            self._ui.checkBoxDefaultLocation.setChecked(False)
+            
+        default_location = self._ui.checkBoxDefaultLocation.isChecked()
+        if output_location and output_file and output_directory_valid:
+            output_location_valid = True
+        
+        value = self.identifierOccursCount(self._ui.lineEditIdentifier.text())
+        valid = (value == 0) or (value == 1 and self._previousIdentifier == self._ui.lineEditIdentifier.text())
         if valid:
-            self._ui.lineEdit0.setStyleSheet(DEFAULT_STYLE_SHEET)
+            self._ui.lineEditIdentifier.setStyleSheet(DEFAULT_STYLE_SHEET)
         else:
-            self._ui.lineEdit0.setStyleSheet(INVALID_STYLE_SHEET)
+            self._ui.lineEditIdentifier.setStyleSheet(INVALID_STYLE_SHEET)
 
-        return valid
+        return valid and (default_location or output_location_valid)
 
     def getConfig(self):
         '''
@@ -70,9 +99,11 @@ class ConfigureDialog(QtGui.QDialog):
         set the _previousIdentifier value so that we can check uniqueness of the
         identifier over the whole of the workflow.
         '''
-        self._previousIdentifier = self._ui.lineEdit0.text()
+        self._previousIdentifier = self._ui.lineEditIdentifier.text()
         config = {}
-        config['identifier'] = self._ui.lineEdit0.text()
+        config['identifier'] = self._ui.lineEditIdentifier.text()
+        config['output'] = self._ui.lineEditOutputLocation.text()
+        config['default'] = self._ui.checkBoxDefaultLocation.isChecked()
         return config
 
     def setConfig(self, config):
@@ -82,5 +113,7 @@ class ConfigureDialog(QtGui.QDialog):
         identifier over the whole of the workflow.
         '''
         self._previousIdentifier = config['identifier']
-        self._ui.lineEdit0.setText(config['identifier'])
+        self._ui.lineEditIdentifier.setText(config['identifier'])
+        self._ui.lineEditOutputLocation.setText(config['output'])
+        self._ui.checkBoxDefaultLocation.setChecked(config['default'])
 

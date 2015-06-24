@@ -11,3 +11,4 @@ __location__ = 'https://github.com/mapclient-plugins/dictserializer/archive/mast
 # import class that derives itself from the step mountpoint.
 from mapclientplugins.dictserializerstep import step
 
+import resources_rc

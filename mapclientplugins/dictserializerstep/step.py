@@ -25,12 +25,15 @@ class DictSerializerStep(WorkflowStepMountPoint):
         self._configured = False # A step cannot be executed until it has been configured.
         self._category = 'Sink'
         # Add any other initialisation code here:
+        self._icon =  QtGui.QImage(':/dictserializerstep/images/data-sink.png')
         # Ports:
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#dict'))
         self._config = {}
         self._config['identifier'] = ''
+        self._config['default'] = True
+        self._config['output'] = ''
         self._data_in = None
 
 
@@ -42,10 +45,13 @@ class DictSerializerStep(WorkflowStepMountPoint):
         '''
         # Put your execute step code here before calling the '_doneExecution' method.
         json_string = json.dumps(self._data_in, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-        output_dir = os.path.join(self._location, self._config['identifier'])
-        filename = os.path.join(output_dir, DICT_OUTPUT_FILENAME)
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+        if self._config['default']:
+            output_dir = os.path.join(self._location, self._config['identifier'])
+            filename = os.path.join(output_dir, DICT_OUTPUT_FILENAME)
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+        else:
+            filename = self._config['output']
 
         with open(filename, 'w') as f:
             f.write(json_string)
